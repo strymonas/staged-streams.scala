@@ -276,7 +276,7 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
                 producer.init(st => {
                   var advf: Var[Unit => Unit] = fun { (_ : Rep[Unit]) => () }
                   var flag: Var[Boolean] = unit(true)
-                  var current: Var[A] = unit(42.asInstanceOf[A]) // TODO: implement Manifest or TypeTag based default[A]
+                  var current: Var[A] = unit(new Array[A](1)(0)) // default[A] hack  
                   def f: Rep[Unit => Unit] = fun { (_ : Rep[Unit]) =>
                     flag = producer.hasNext(st)
                     if(flag) {
