@@ -83,6 +83,14 @@ trait StagedStreamBenchmarksS extends StagedStream {
       .flatmap(x => Stream[Int](vLo).map(y => (x * y)))
       .take(20000000)
       .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
+  def zip_flat_flat (vHi : Rep[Array[Int]], vLo : Rep[Array[Int]]) : Rep[Int] =
+     Stream[Int](vHi)
+      .flatmap(x => Stream[Int](vLo).map(y => (x * y)))
+      .zip(x => (y:Rep[Int]) => x + y,
+        Stream[Int](vLo)
+          .flatmap(x => Stream[Int](vHi).map(y => (x * y))))
+      .take(20000000)
+      .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
 }
 
 trait StagedStreamBenchmarksT extends StagedStreamBenchmarksS
@@ -111,6 +119,7 @@ trait StagedStreamBenchmarksT extends StagedStreamBenchmarksS
   val flatMap_after_zipWith : ((Array[Int], Array[Int]) => Int)
   val zipWith_after_flatMap : ((Array[Int], Array[Int]) => Int)
   val flatMap_take : ((Array[Int], Array[Int]) => Int)
+  val zip_flat_flat : ((Array[Int], Array[Int]) => Int)
 }
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -164,6 +173,7 @@ class S {
       override val flatMap_after_zipWith : ((Array[Int], Array[Int]) => Int) = compile2(self.flatMap_after_zipWith)
       override val zipWith_after_flatMap : ((Array[Int], Array[Int]) => Int) = compile2(self.zipWith_after_flatMap)
       override val flatMap_take : ((Array[Int], Array[Int]) => Int) = compile2(self.flatMap_take)
+      override lazy val zip_flat_flat : ((Array[Int], Array[Int]) => Int) = compile2(self.zip_flat_flat) // FIXME crashes
     }
   }
 
@@ -224,6 +234,12 @@ class S {
   @Benchmark
   def flatMap_take_staged () : Int = {
     val sum : Int = staged.flatMap_take(v, vLo)
+    sum
+  }
+  
+  @Benchmark
+  def zip_flat_flat_staged () : Int = {
+    val sum : Int = staged.zip_flat_flat(v, vLo)
     sum
   }
 }
