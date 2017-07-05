@@ -21,8 +21,7 @@ trait ScalaCompileMultiParams extends ScalaCompile {
     if (this.compiler eq null)
       setupCompiler()
 
-    if (dumpGeneratedCode)
-      println(source)
+     println(source)
 
     val compiler = this.compiler
     val run = new compiler.Run
