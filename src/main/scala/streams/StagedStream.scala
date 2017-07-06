@@ -250,19 +250,31 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
             def makeAdvanced[A](advf: Var[Unit => Unit], k: (A => Rep[Unit]), stream: StagedStream[A]): Rep[Unit] = {
               stream match {
                 case Linear(producer) => {
-                  producer.init(st => {
-                    val oldAdvf: Rep[Unit => Unit] = advf
-                    def f: Rep[Unit => Unit] = fun { (_ : Rep[Unit]) =>
-                      if(producer.hasNext(st))
-                        producer.step(st, k)
-                      else {
-                        advf = oldAdvf
-                        oldAdvf(())
-                      }
-                    }
-                    advf = f
-                    f(())
-                  })
+                  producer.card match {
+                    case AtMost1 =>
+                      producer.init(st => {
+                        if(producer.hasNext(st))
+                          producer.step(st, k)
+                        else {
+                            val f: Rep[Unit => Unit] = advf
+                            f(())
+                        }
+                      })
+                    case Many =>
+                      producer.init(st => {
+                        val oldAdvf: Rep[Unit => Unit] = advf
+                        def f: Rep[Unit => Unit] = fun { (_ : Rep[Unit]) =>
+                          if(producer.hasNext(st))
+                            producer.step(st, k)
+                          else {
+                            advf = oldAdvf
+                            oldAdvf(())
+                          }
+                        }
+                        advf = f
+                        f(())
+                      })
+                  }
                 }
                 case Nested(producer, nestedf) =>
                   makeAdvanced(advf, ((el: Id[_]) => makeAdvanced(advf, k, nestedf(el))), Linear(producer))
@@ -276,7 +288,7 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
                 producer.init(st => {
                   var advf: Var[Unit => Unit] = fun { (_ : Rep[Unit]) => () }
                   var flag: Var[Boolean] = unit(true)
-                  var current: Var[A] = unit(new Array[A](1)(0)) // default[A] hack  
+                  var current: Var[A] = unit(new Array[A](1)(0)) // default[A] hack
                   def f: Rep[Unit => Unit] = fun { (_ : Rep[Unit]) =>
                     flag = producer.hasNext(st)
                     if(flag) {
@@ -342,8 +354,8 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
             def step(st: St, k: (Rep[A] => Rep[Unit])): Rep[Unit] = {
               val (i, _, arr) = st
                 val el = arr(i)
-                k(el)
                 i = i + 1
+                k(el)
             }
             def hasNext(st: St): Rep[Boolean] = {
               val (i, n, _) = st
