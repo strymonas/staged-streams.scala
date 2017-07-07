@@ -93,7 +93,7 @@ trait StagedStreamBenchmarksS extends StagedStream {
       .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
   def zip_filter_filter (xs : Rep[Array[Int]], ys: Rep[Array[Int]]) : Rep[Int] =
      Stream[Int](xs)
-      .filter(_ > 5)
+      .filter(_ < 3)
       .zip(((a : Rep[Int]) => (b : Rep[Int]) => a + b), 
         Stream[Int](ys).filter(_ > 5))
       .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
