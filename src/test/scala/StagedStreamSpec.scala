@@ -55,20 +55,7 @@ trait StagedStreamTests extends StagedStream {
       Stream(Linear(Stream[Int](xs).makeLinear(stream)))
       .fold(0, ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
   }
-  def zip_flat_flat_take (vHi : Rep[Array[Int]], vLo : Rep[Array[Int]]) : Rep[Int] =
-    Stream[Int](vHi)
-      .flatmap(x => Stream[Int](vLo).map(y => (x * y)))
-      .zip(x => (y:Rep[Int]) => x + y,
-        Stream[Int](vLo)
-          .flatmap(x => Stream[Int](vHi).map(y => (x * y))))
-      .take(20000000)
-      .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
-  def zip_filter_filter (xs : Rep[Array[Int]], ys: Rep[Array[Int]]) : Rep[Int] =
-    Stream[Int](xs)
-      .filter(_ > 5)
-      .zip(((a : Rep[Int]) => (b : Rep[Int]) => a + b),
-        Stream[Int](ys).filter(_ > 5))
-      .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
+
 }
 
 object StagedStreamSpec extends Properties("Staged Stream") {
@@ -120,8 +107,6 @@ object StagedStreamSpec extends Properties("Staged Stream") {
     val zip_with_simpleTest : ((Array[Int], Array[Int]) => Int) = compile2(self.zip_with_simpleTest)
     val zip_with_genTest : ((Array[Int], Array[Int]) => Int) = compile2(self.zip_with_genTest)
     val makeLinearTest : (Array[Int] => Int) = compile(self.makeLinearTest)
-    val zip_flat_flat_take : ((Array[Int], Array[Int]) => Int) = compile2(self.zip_flat_flat_take)
-    val zip_filter_filter : ((Array[Int], Array[Int]) => Int) = compile2(self.zip_filter_filter)
   }
 
   property("size") = forAll { (xs: Array[Int]) =>
@@ -172,6 +157,8 @@ object StagedStreamSpec extends Properties("Staged Stream") {
     x == y
   }
 
+
+
   property("zip simple/sum") = forAll { (xs: Array[Int], ys: Array[Int]) =>
     var x = (xs, ys).zipped.map(_ + _).sum
     var y = staged.zip_with_simpleTest(xs, ys)
@@ -190,15 +177,4 @@ object StagedStreamSpec extends Properties("Staged Stream") {
     x == y
   }
 
-  property("zip/flat/flat") = forAll { (xs: Array[Int], ys: Array[Int]) =>
-    var x = (xs.flatMap((x : Int) => ys.map(y => x * y)), ys.flatMap((x : Int) => xs.map(y => x * y))).zipped.map(_ + _).take(20000000).sum
-    val y = staged.zip_flat_flat_take(xs, ys)
-    x == y
-  }
-
-  property("zip/filter/filter") = forAll { (xs: Array[Int], ys: Array[Int]) =>
-    var x = (xs.filter(_ > 5), ys.filter(_ > 5)).zipped.map(_ + _).sum
-    val y = staged.zip_filter_filter(xs, ys)
-    x == y
-  }
 }
