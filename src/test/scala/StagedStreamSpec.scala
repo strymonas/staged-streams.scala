@@ -66,7 +66,7 @@ trait StagedStreamTests extends StagedStream {
   def zip_filter_filter (xs : Rep[Array[Int]], ys: Rep[Array[Int]], num: Rep[Int]) : Rep[Int] =
     Stream[Int](xs)
       .filter(_ < num)
-      .zip(((a : Rep[Int]) => (b : Rep[Int]) => a + b), 
+      .zip(((a : Rep[Int]) => (b : Rep[Int]) => a + b),
         Stream[Int](ys).filter(_ > num))
       .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
 }
@@ -191,7 +191,7 @@ object StagedStreamSpec extends Properties("Staged Stream") {
   }
 
   property("zip/flat/flat") = forAll { (xs: Array[Int], ys: Array[Int], num: Int) =>
-    var x = (xs.flatMap((x : Int) => ys.map(y => x + y)), ys.flatMap((x : Int) => xs.map(y => x + y))).zipped.map(_ + _).take(num).sum
+    var x = (xs.flatMap((x : Int) => ys.map(y => x * y)), ys.flatMap((x : Int) => xs.map(y => x * y))).zipped.map(_ + _).take(num).sum
     val y = staged.zip_flat_flat_take(xs, ys, num)
     x == y
   }
