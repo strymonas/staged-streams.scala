@@ -247,7 +247,7 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
         stream match {
           case Linear(producer) => producer
           case Nested(producer, nestedf) => {
-            def makeAdvanced[A](advf: Var[Unit => Unit], k: (A => Rep[Unit]), stream: StagedStream[A]): Rep[Unit] = {
+            def makeAdvanced[A](advf: Var[Int => Unit], k: (A => Rep[Unit]), stream: StagedStream[A]): Rep[Unit] = {
               stream match {
                 case Linear(producer) => {
                   producer.card match {
@@ -256,23 +256,23 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
                         if(producer.hasNext(st))
                           producer.step(st, k)
                         else {
-                            val f: Rep[Unit => Unit] = advf
-                            f(())
+                            val f: Rep[Int => Unit] = advf
+                            f(42)
                         }
                       })
                     case Many =>
                       producer.init(st => {
-                        val oldAdvf: Rep[Unit => Unit] = advf
-                        def f: Rep[Unit => Unit] = fun { (_ : Rep[Unit]) =>
+                        val oldAdvf: Rep[Int => Unit] = advf
+                        def f: Rep[Int => Unit] = fun { (_ : Rep[Int]) =>
                           if(producer.hasNext(st))
                             producer.step(st, k)
                           else {
                             advf = oldAdvf
-                            oldAdvf(())
+                            oldAdvf(42)
                           }
                         }
                         advf = f
-                        f(())
+                        f(42)
                       })
                   }
                 }
@@ -281,15 +281,15 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
               }
             }
             new Producer[Rep[A]] {
-              type St = (Var[Boolean], Var[A], Var[Unit => Unit])
+              type St = (Var[Boolean], Var[A], Var[Int => Unit])
 
               val card = Many
               def init(k: St => Rep[Unit]): Rep[Unit] = {
                 producer.init(st => {
-                  var advf: Var[Unit => Unit] = fun { (_ : Rep[Unit]) => () }
+                  var advf: Var[Int => Unit] = fun { (_ : Rep[Int]) => () }
                   var flag: Var[Boolean] = unit(true)
                   var current: Var[A] = unit(new Array[A](1)(0)) // default[A] hack
-                  def f: Rep[Unit => Unit] = fun { (_ : Rep[Unit]) =>
+                  def f: Rep[Int => Unit] = fun { (_ : Rep[Int]) =>
                     flag = producer.hasNext(st)
                     if(flag) {
                       producer.step(st, el => {
@@ -298,15 +298,15 @@ with LiftVariables with LiftBoolean with LiftPrimitives with LiftString {
                     }
                   }
                   advf = f
-                  f(())
+                  f(42)
                   k((flag, current, advf))
                 })
               }
               def step(st: St, k: (Rep[A] => Rep[Unit])): Rep[Unit] = {
                 val (flag, current, advf) = st
                 var el: Var[A] = current
-                val f: Rep[Unit => Unit] = advf
-                f(())
+                val f: Rep[Int => Unit] = advf
+                f(42)
                 k(el)
               }
               def hasNext(st: St): Rep[Boolean] = {

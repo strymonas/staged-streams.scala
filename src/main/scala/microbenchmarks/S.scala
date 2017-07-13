@@ -2,15 +2,7 @@ package microbenchmarks
 
 import streams._
 import lms._
-
-import org.openjdk.jmh.annotations.Benchmark
-import org.openjdk.jmh.annotations.Scope
-import org.openjdk.jmh.annotations.Setup
-import org.openjdk.jmh.annotations.State
-import org.openjdk.jmh.annotations.BenchmarkMode
-import org.openjdk.jmh.annotations.Mode
-import org.openjdk.jmh.annotations.Fork
-import org.openjdk.jmh.annotations.OutputTimeUnit
+import org.openjdk.jmh.annotations._
 import java.util.concurrent.TimeUnit
 
 import scala.lms.common._
@@ -93,7 +85,7 @@ trait StagedStreamBenchmarksS extends StagedStream {
       .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
   def zip_filter_filter (xs : Rep[Array[Int]], ys: Rep[Array[Int]]) : Rep[Int] =
      Stream[Int](xs)
-      .filter(_ > 5)
+      .filter(_ < 3)
       .zip(((a : Rep[Int]) => (b : Rep[Int]) => a + b), 
         Stream[Int](ys).filter(_ > 5))
       .fold(unit(0), ((a : Rep[Int])=> (b : Rep[Int]) => a + b))
